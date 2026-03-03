@@ -2,6 +2,9 @@
   "name": "clawd-files-v5",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,7 +13,6 @@
     "generate-api": "openapi-ts"
   },
   "dependencies": {
-    "@hey-api/client-fetch": "^0.13.1",
     "@microsoft/signalr": "^10.0.0",
     "@shikijs/rehype": "^4.0.1",
     "lucide-react": "^0.576.0",
