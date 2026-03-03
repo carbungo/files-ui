@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const accept = request.headers.get("accept") ?? "";
   const { pathname } = request.nextUrl;
   const fileMatch = pathname.match(/^\/buckets\/([^/]+)\/files\/(.+)$/);
