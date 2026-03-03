@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import { BucketHeader } from "@/components/bucket/bucket-header";
-import { FileList } from "@/components/bucket/file-list";
-import { FileGrid } from "@/components/bucket/file-grid";
+import { LiveFileList } from "@/components/bucket/live-file-list";
 import { ReadmeSection } from "@/components/bucket/readme-section";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatBytes } from "@/lib/utils";
@@ -93,11 +92,11 @@ export default async function BucketPage({
         expiresAt={bucket.expires_at}
       />
 
-      {viewMode === "grid" ? (
-        <FileGrid bucketId={bucket.id} files={bucket.files} />
-      ) : (
-        <FileList bucketId={bucket.id} files={bucket.files} />
-      )}
+      <LiveFileList
+        bucketId={bucket.id}
+        initialFiles={bucket.files}
+        viewMode={viewMode === "grid" ? "grid" : "list"}
+      />
 
       <Suspense fallback={<ReadmeFallback />}>
         <ReadmeSection bucketId={bucket.id} files={bucket.files} />
