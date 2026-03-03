@@ -21,12 +21,9 @@ export default async function UploadTokenPage({
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="mx-auto max-w-md rounded-lg border border-danger/50 bg-surface p-6 text-center">
-          <h1 className="text-lg font-semibold text-danger">
-            Missing Upload Token
-          </h1>
+          <h1 className="text-lg font-semibold text-danger">Missing Upload Token</h1>
           <p className="mt-2 text-sm text-text-muted">
-            An upload token is required to upload files. Please use a valid
-            upload link.
+            An upload token is required to upload files. Please use a valid upload link.
           </p>
         </div>
       </div>

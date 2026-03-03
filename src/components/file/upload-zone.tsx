@@ -70,9 +70,7 @@ export function UploadZone({ bucketId, uploadToken, proxyUrl }: UploadZoneProps)
       xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable) {
           const progress = Math.round((e.loaded / e.total) * 100);
-          setFiles((prev) =>
-            prev.map((f) => (f.id === tracked.id ? { ...f, progress } : f)),
-          );
+          setFiles((prev) => prev.map((f) => (f.id === tracked.id ? { ...f, progress } : f)));
         }
       });
 
@@ -80,9 +78,7 @@ export function UploadZone({ bucketId, uploadToken, proxyUrl }: UploadZoneProps)
         if (xhr.status >= 200 && xhr.status < 300) {
           setFiles((prev) =>
             prev.map((f) =>
-              f.id === tracked.id
-                ? { ...f, status: "success" as const, progress: 100 }
-                : f,
+              f.id === tracked.id ? { ...f, status: "success" as const, progress: 100 } : f,
             ),
           );
         } else {
@@ -95,9 +91,7 @@ export function UploadZone({ bucketId, uploadToken, proxyUrl }: UploadZoneProps)
           }
           setFiles((prev) =>
             prev.map((f) =>
-              f.id === tracked.id
-                ? { ...f, status: "error" as const, error: errorMsg }
-                : f,
+              f.id === tracked.id ? { ...f, status: "error" as const, error: errorMsg } : f,
             ),
           );
         }
@@ -106,9 +100,7 @@ export function UploadZone({ bucketId, uploadToken, proxyUrl }: UploadZoneProps)
       xhr.addEventListener("error", () => {
         setFiles((prev) =>
           prev.map((f) =>
-            f.id === tracked.id
-              ? { ...f, status: "error" as const, error: "Network error" }
-              : f,
+            f.id === tracked.id ? { ...f, status: "error" as const, error: "Network error" } : f,
           ),
         );
       });
@@ -116,9 +108,7 @@ export function UploadZone({ bucketId, uploadToken, proxyUrl }: UploadZoneProps)
       xhr.addEventListener("abort", () => {
         setFiles((prev) =>
           prev.map((f) =>
-            f.id === tracked.id
-              ? { ...f, status: "error" as const, error: "Cancelled" }
-              : f,
+            f.id === tracked.id ? { ...f, status: "error" as const, error: "Cancelled" } : f,
           ),
         );
       });
@@ -241,22 +231,14 @@ export function UploadZone({ bucketId, uploadToken, proxyUrl }: UploadZoneProps)
       >
         <Upload size={32} />
         <div className="text-center">
-          <p className="text-sm font-medium">
-            Drop files here or click to browse
-          </p>
+          <p className="text-sm font-medium">Drop files here or click to browse</p>
           <p className="mt-1 text-xs text-text-muted">
             Files over 100 MB will use streaming upload
           </p>
         </div>
       </div>
 
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        onChange={handleInputChange}
-        className="hidden"
-      />
+      <input ref={inputRef} type="file" multiple onChange={handleInputChange} className="hidden" />
 
       {/* File list */}
       {files.length > 0 && (
@@ -271,23 +253,15 @@ export function UploadZone({ bucketId, uploadToken, proxyUrl }: UploadZoneProps)
                 {tracked.status === "uploading" && (
                   <Loader2 size={16} className="animate-spin text-accent" />
                 )}
-                {tracked.status === "success" && (
-                  <CheckCircle size={16} className="text-success" />
-                )}
-                {tracked.status === "error" && (
-                  <AlertCircle size={16} className="text-danger" />
-                )}
-                {tracked.status === "idle" && (
-                  <Upload size={16} className="text-text-muted" />
-                )}
+                {tracked.status === "success" && <CheckCircle size={16} className="text-success" />}
+                {tracked.status === "error" && <AlertCircle size={16} className="text-danger" />}
+                {tracked.status === "idle" && <Upload size={16} className="text-text-muted" />}
               </div>
 
               {/* File info and progress */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-sm font-medium">
-                    {tracked.file.name}
-                  </p>
+                  <p className="truncate text-sm font-medium">{tracked.file.name}</p>
                   <span className="shrink-0 text-xs text-text-muted">
                     {formatBytes(tracked.file.size)}
                   </span>
@@ -301,9 +275,7 @@ export function UploadZone({ bucketId, uploadToken, proxyUrl }: UploadZoneProps)
                         style={{ width: `${tracked.progress}%` }}
                       />
                     </div>
-                    <p className="mt-0.5 text-xs text-text-muted">
-                      {tracked.progress}%
-                    </p>
+                    <p className="mt-0.5 text-xs text-text-muted">{tracked.progress}%</p>
                   </div>
                 )}
 
