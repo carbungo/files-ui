@@ -17,9 +17,9 @@ export async function CodeBlock({ code, language, maxLines = 50 }: CodeBlockProp
   });
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
+    <div className="rounded-lg border border-border bg-surface">
       <div
-        className="[&_pre]:!bg-surface [&_pre]:p-4 [&_pre]:text-sm [&_pre]:leading-relaxed [&_code]:font-mono"
+        className="[&_pre]:!bg-transparent [&_pre]:overflow-x-auto [&_pre]:p-4 [&_pre]:text-sm [&_pre]:leading-relaxed [&_code]:font-mono"
         dangerouslySetInnerHTML={{ __html: html }}
       />
       {hasMore && (
