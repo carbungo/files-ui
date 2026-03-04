@@ -21,7 +21,7 @@ interface FileIconProps {
 export function FileIcon({ mimeType, isDirectory, className = "", size = 16 }: FileIconProps) {
   if (isDirectory) return <Folder size={size} className={`text-accent-2 ${className}`} />;
 
-  const [type, subtype] = mimeType.split("/");
+  const [type, subtype] = (mimeType ?? "application/octet-stream").split("/");
 
   if (type === "image") return <FileImage size={size} className={`${className}`} />;
   if (type === "video") return <Video size={size} className={`text-purple-400 ${className}`} />;

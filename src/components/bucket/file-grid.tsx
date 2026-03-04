@@ -24,15 +24,15 @@ interface FileGridProps {
 const CODE_EXTENSIONS =
   /\.(rs|go|py|rb|java|kt|swift|c|cpp|h|hpp|cs|fs|hs|ml|ex|exs|clj|scala|zig|nim|ts|tsx|jsx|vue|svelte|astro|css|scss|less|sql|graphql|proto|tf|hcl|yaml|yml|toml|ini|conf|cfg|env|sh|bash|zsh|fish|ps1|bat|cmd|makefile|dockerfile|json|xml|html|md)$/i;
 
-function isImageType(mime: string) {
-  return mime.startsWith("image/");
+function isImageType(mime: string | undefined) {
+  return mime?.startsWith("image/") ?? false;
 }
 
-function isVideoType(mime: string) {
-  return mime.startsWith("video/");
+function isVideoType(mime: string | undefined) {
+  return mime?.startsWith("video/") ?? false;
 }
 
-function isCodeOrText(mime: string, name: string) {
+function isCodeOrText(mime: string | undefined, name: string) {
   return isTextType(mime) || CODE_EXTENSIONS.test(name);
 }
 

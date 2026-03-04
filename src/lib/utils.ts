@@ -15,7 +15,8 @@ export function formatExpiry(expiresAt: string): string {
   return `${hours}h remaining`;
 }
 
-export function isTextType(mimeType: string): boolean {
+export function isTextType(mimeType: string | undefined): boolean {
+  if (!mimeType) return false;
   if (mimeType.startsWith("text/")) return true;
   return [
     "application/json",
