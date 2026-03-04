@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { TransitionLink } from "@/components/ui/transition-link";
 import { getAuthToken } from "@/lib/auth/cookies";
 import { EditBucketForm } from "@/components/dashboard/edit-bucket-form";
 import { DeleteBucketButton } from "@/components/dashboard/delete-bucket-button";
@@ -39,13 +39,14 @@ export default async function BucketDetailPage({ params }: BucketDetailPageProps
 
   return (
     <div>
-      <Link
+      <TransitionLink
+        direction="back"
         href="/dashboard/buckets"
         className="mb-4 inline-flex items-center gap-1 text-sm text-text-muted hover:text-text"
       >
         <ArrowLeft size={14} />
         Back to Buckets
-      </Link>
+      </TransitionLink>
 
       <Card className="mb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

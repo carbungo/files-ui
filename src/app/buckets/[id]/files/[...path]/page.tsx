@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ViewTransition } from "react";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, ExternalLink } from "lucide-react";
+import { TransitionLink } from "@/components/ui/transition-link";
 import { FileIcon } from "@/components/file/file-icon";
 import { CodeBlock } from "@/components/file/code-block";
 import { MarkdownRenderer } from "@/components/file/markdown-renderer";
@@ -253,20 +254,23 @@ export default async function FileDetailPage({ params }: { params: Promise<PageP
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
       {/* Back link */}
-      <Link
+      <TransitionLink
+        direction="back"
         href={`/buckets/${bucketId}`}
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-text transition-colors"
       >
         <ArrowLeft size={14} />
         Back to bucket
-      </Link>
+      </TransitionLink>
 
       {/* File metadata header */}
       <div className="mb-8">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-surface-2">
-            <FileIcon mimeType={metadata.mime_type} size={24} />
-          </div>
+          <ViewTransition name={`file-icon-${filePath}`}>
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-surface-2">
+              <FileIcon mimeType={metadata.mime_type} size={24} />
+            </div>
+          </ViewTransition>
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-xl font-semibold text-text">{metadata.name}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-text-muted">

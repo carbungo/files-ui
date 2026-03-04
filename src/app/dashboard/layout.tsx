@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ViewTransition } from "react";
 import type { Metadata } from "next";
 import { validateAuth } from "@/lib/auth/validate";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
@@ -14,7 +15,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen">
       <DashboardNav />
-      <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-8">
+        <ViewTransition default="vt-tab">{children}</ViewTransition>
+      </main>
     </div>
   );
 }

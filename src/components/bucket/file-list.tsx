@@ -1,5 +1,6 @@
-import Link from "next/link";
+import { ViewTransition } from "react";
 import { FileIcon } from "@/components/file/file-icon";
+import { TransitionLink } from "@/components/ui/transition-link";
 import {
   Table,
   TableHeader,
@@ -41,15 +42,18 @@ export function FileList({ bucketId, files }: FileListProps) {
         {files.map((file) => (
           <TableRow key={file.path}>
             <TableCell>
-              <FileIcon mimeType={file.mime_type} size={16} />
+              <ViewTransition name={`file-icon-${file.path}`}>
+                <FileIcon mimeType={file.mime_type} size={16} />
+              </ViewTransition>
             </TableCell>
             <TableCell>
-              <Link
+              <TransitionLink
+                direction="forward"
                 href={`/buckets/${bucketId}/files/${file.path}`}
                 className="text-link hover:underline truncate block"
               >
                 {file.name}
-              </Link>
+              </TransitionLink>
             </TableCell>
             <TableCell className="text-text-muted whitespace-nowrap">
               {formatBytes(file.size)}

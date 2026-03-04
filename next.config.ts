@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const apiUrl = process.env.API_URL ?? "http://localhost:5239";
 
 const nextConfig: NextConfig = {
+  experimental: { viewTransition: true },
   output: "standalone",
   images: {
     remotePatterns: [{ protocol: "http", hostname: "localhost" }],
