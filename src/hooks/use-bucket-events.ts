@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createFileHub } from "@/lib/signalr/client";
 
 interface BucketFile {
@@ -16,29 +17,35 @@ interface BucketFile {
 
 export function useBucketEvents(bucketId: string, initialFiles: BucketFile[]) {
   const [files, setFiles] = useState<BucketFile[]>(initialFiles);
+  const router = useRouter();
 
   useEffect(() => {
     setFiles(initialFiles);
   }, [initialFiles]);
 
   useEffect(() => {
-    // Use relative URL — proxied through next.config.ts rewrites
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    if (!origin) return;
-
     let stopped = false;
 
-    createFileHub(origin).then((hub) => {
+    createFileHub().then((hub) => {
       if (stopped) return;
 
       hub.on("FileCreated", (id: string, file: BucketFile) => {
-        if (id === bucketId) setFiles((prev) => [...prev, file]);
+        if (id === bucketId) {
+          setFiles((prev) => [...prev, file]);
+          router.refresh();
+        }
       });
       hub.on("FileDeleted", (id: string, path: string) => {
-        if (id === bucketId) setFiles((prev) => prev.filter((f) => f.path !== path));
+        if (id === bucketId) {
+          setFiles((prev) => prev.filter((f) => f.path !== path));
+          router.refresh();
+        }
       });
       hub.on("FileUpdated", (id: string, file: BucketFile) => {
-        if (id === bucketId) setFiles((prev) => prev.map((f) => (f.path === file.path ? file : f)));
+        if (id === bucketId) {
+          setFiles((prev) => prev.map((f) => (f.path === file.path ? file : f)));
+          router.refresh();
+        }
       });
 
       hub
@@ -58,7 +65,7 @@ export function useBucketEvents(bucketId: string, initialFiles: BucketFile[]) {
       stopped = true;
       cleanup();
     };
-  }, [bucketId]);
+  }, [bucketId, router]);
 
   return files;
 }

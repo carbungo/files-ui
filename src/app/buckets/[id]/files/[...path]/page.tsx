@@ -5,6 +5,7 @@ import { ArrowLeft, Download, ExternalLink } from "lucide-react";
 import { FileIcon } from "@/components/file/file-icon";
 import { CodeBlock } from "@/components/file/code-block";
 import { MarkdownRenderer } from "@/components/file/markdown-renderer";
+import { FileEventListener } from "@/components/file/file-event-listener";
 import { Badge } from "@/components/ui/badge";
 import { formatBytes, isTextType } from "@/lib/utils";
 
@@ -254,6 +255,7 @@ export default async function FileDetailPage({ params }: { params: Promise<PageP
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
+      <FileEventListener bucketId={bucketId} filePath={filePath} />
       {/* Back link */}
       <Link
         href={`/buckets/${bucketId}`}
