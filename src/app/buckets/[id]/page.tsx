@@ -89,6 +89,8 @@ export default async function BucketPage({
       <LiveFileList
         bucketId={bucket.id}
         initialFiles={bucket.files}
+        hasMoreFiles={bucket.has_more_files}
+        fileCount={bucket.file_count}
         viewMode={viewMode === "grid" ? "grid" : "list"}
         currentPath={currentPath ?? ""}
       />

@@ -1,7 +1,8 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Folder } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import { useBucketEvents } from "@/hooks/use-bucket-events";
 import { FileList } from "./file-list";
 import { FileGrid } from "./file-grid";
@@ -20,6 +21,8 @@ interface FileEntry {
 interface LiveFileListProps {
   bucketId: string;
   initialFiles: FileEntry[];
+  hasMoreFiles: boolean;
+  fileCount: number;
   viewMode: "list" | "grid";
   currentPath: string;
 }
@@ -76,17 +79,78 @@ function Breadcrumbs({ bucketId, currentPath }: { bucketId: string; currentPath:
   );
 }
 
-export function LiveFileList({ bucketId, initialFiles, viewMode, currentPath }: LiveFileListProps) {
+const PAGE_SIZE = 100;
+
+export function LiveFileList({
+  bucketId,
+  initialFiles,
+  hasMoreFiles,
+  fileCount,
+  viewMode,
+  currentPath,
+}: LiveFileListProps) {
   const files = useBucketEvents(bucketId, initialFiles);
-  const { folders, directFiles } = groupFilesAtPath(files, currentPath);
+  const [extraFiles, setExtraFiles] = useState<FileEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [exhausted, setExhausted] = useState(!hasMoreFiles);
+
+  const allFiles = [...files, ...extraFiles];
+  const { folders, directFiles } = groupFilesAtPath(allFiles, currentPath);
+
+  const loadMore = useCallback(async () => {
+    setLoading(true);
+    try {
+      const offset = allFiles.length;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(
+        `${apiUrl}/api/buckets/${bucketId}/files?limit=${PAGE_SIZE}&offset=${offset}&sort=path&order=asc`,
+      );
+      if (!res.ok) return;
+      const data = (await res.json()) as { items: FileEntry[]; total: number };
+      setExtraFiles((prev) => [...prev, ...data.items]);
+      if (offset + data.items.length >= data.total) {
+        setExhausted(true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [allFiles.length, bucketId]);
 
   return (
     <div>
       {currentPath && <Breadcrumbs bucketId={bucketId} currentPath={currentPath} />}
       {viewMode === "grid" ? (
-        <FileGrid bucketId={bucketId} files={directFiles} folders={folders} currentPath={currentPath} />
+        <FileGrid
+          bucketId={bucketId}
+          files={directFiles}
+          folders={folders}
+          currentPath={currentPath}
+        />
       ) : (
-        <FileList bucketId={bucketId} files={directFiles} folders={folders} currentPath={currentPath} />
+        <FileList
+          bucketId={bucketId}
+          files={directFiles}
+          folders={folders}
+          currentPath={currentPath}
+        />
+      )}
+      {!exhausted && (
+        <div className="mt-4 flex justify-center">
+          <button
+            onClick={loadMore}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-surface-2 transition-colors disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Loading...
+              </>
+            ) : (
+              `Load more (${allFiles.length} of ${fileCount})`
+            )}
+          </button>
+        </div>
       )}
     </div>
   );
