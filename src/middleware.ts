@@ -27,6 +27,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(target);
   }
 
+  // Short URL: proxy to API
+  const shortMatch = pathname.match(/^\/s\/([^/]+)$/);
+  if (shortMatch) {
+    const [, code] = shortMatch;
+    const target = new URL(`/s/${code}`, apiUrl);
+    return NextResponse.rewrite(target);
+  }
+
   // Upload: proxy to API
   const uploadMatch = pathname.match(/^\/api\/buckets\/([^/]+)\/upload(\/stream)?$/);
   if (uploadMatch) {
@@ -41,6 +49,7 @@ export const config = {
   matcher: [
     "/buckets/:id/files/:path*",
     "/buckets/:id/zip",
+    "/s/:code",
     "/api/buckets/:id/upload",
     "/api/buckets/:id/upload/stream",
   ],
