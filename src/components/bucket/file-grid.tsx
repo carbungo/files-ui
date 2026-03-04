@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, ViewTransition } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { FileIcon } from "@/components/file/file-icon";
-import { TransitionLink } from "@/components/ui/transition-link";
 import { formatBytes, isTextType } from "@/lib/utils";
 import { Play } from "lucide-react";
 
@@ -96,29 +96,19 @@ export function FileGrid({ bucketId, files }: FileGridProps) {
         const isCode = isCodeOrText(file.mime_type, file.name);
 
         return (
-          <TransitionLink
-            key={file.path}
-            direction="forward"
-            href={`/buckets/${bucketId}/files/${file.path}`}
-          >
+          <Link key={file.path} href={`/buckets/${bucketId}/files/${file.path}`}>
             <div className="group flex h-40 flex-col overflow-hidden rounded-lg border border-border bg-surface hover:border-accent transition-colors">
               <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-t-[inherit] bg-surface-2">
                 {isImage ? (
                   <ImageThumbnail bucketId={bucketId} file={file} />
                 ) : isVideo ? (
-                  <ViewTransition name={`file-icon-${file.path}`}>
-                    <VideoThumbnail file={file} />
-                  </ViewTransition>
+                  <VideoThumbnail file={file} />
                 ) : isCode ? (
-                  <ViewTransition name={`file-icon-${file.path}`}>
-                    <CodePreview file={file} />
-                  </ViewTransition>
+                  <CodePreview file={file} />
                 ) : (
-                  <ViewTransition name={`file-icon-${file.path}`}>
-                    <div className="flex h-full w-full items-center justify-center">
-                      <FileIcon mimeType={file.mime_type} size={28} />
-                    </div>
-                  </ViewTransition>
+                  <div className="flex h-full w-full items-center justify-center">
+                    <FileIcon mimeType={file.mime_type} size={28} />
+                  </div>
                 )}
               </div>
               <div className="flex min-w-0 flex-1 flex-col justify-center px-2 py-1.5">
@@ -126,7 +116,7 @@ export function FileGrid({ bucketId, files }: FileGridProps) {
                 <span className="text-xs text-text-muted">{formatBytes(file.size)}</span>
               </div>
             </div>
-          </TransitionLink>
+          </Link>
         );
       })}
     </div>

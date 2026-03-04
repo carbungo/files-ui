@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ViewTransition } from "react";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
@@ -22,17 +21,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       lang="en"
       className={`${inter.variable} ${jetbrains.variable} ${spaceGrotesk.variable}${theme === "light" ? " light" : ""}`}
     >
-      <body className="font-body bg-bg text-text antialiased">
-        <ViewTransition
-          default={{
-            "navigation-forward": "vt-forward",
-            "navigation-back": "vt-back",
-            default: "vt-fade",
-          }}
-        >
-          {children}
-        </ViewTransition>
-      </body>
+      <body className="font-body bg-bg text-text antialiased">{children}</body>
     </html>
   );
 }

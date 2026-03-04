@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
@@ -6,7 +5,6 @@ import { BucketHeader } from "@/components/bucket/bucket-header";
 import { ViewModeToggle } from "@/components/bucket/view-mode-toggle";
 import { LiveFileList } from "@/components/bucket/live-file-list";
 import { ReadmeSection } from "@/components/bucket/readme-section";
-import { Skeleton } from "@/components/ui/skeleton";
 import { formatBytes } from "@/lib/utils";
 
 interface BucketFile {
@@ -57,17 +55,6 @@ export async function generateMetadata({
   };
 }
 
-function ReadmeFallback() {
-  return (
-    <div className="space-y-3 rounded-lg border border-border bg-surface p-6">
-      <Skeleton className="h-6 w-32" />
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-3/4" />
-      <Skeleton className="h-4 w-5/6" />
-    </div>
-  );
-}
-
 export default async function BucketPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const bucket = await fetchBucket(id);
@@ -98,9 +85,7 @@ export default async function BucketPage({ params }: { params: Promise<{ id: str
         viewMode={viewMode === "grid" ? "grid" : "list"}
       />
 
-      <Suspense fallback={<ReadmeFallback />}>
-        <ReadmeSection bucketId={bucket.id} files={bucket.files} />
-      </Suspense>
+      <ReadmeSection bucketId={bucket.id} files={bucket.files} />
     </main>
   );
 }
