@@ -8,7 +8,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { formatBytes } from "@/lib/utils";
+import { encodeFilePath, formatBytes } from "@/lib/utils";
 
 interface FileEntry {
   path: string;
@@ -68,7 +68,7 @@ export function FileList({ bucketId, files, folders = [], currentPath = "" }: Fi
             </TableCell>
             <TableCell>
               <Link
-                href={`/buckets/${bucketId}/files/${file.path}`}
+                href={`/buckets/${bucketId}/files/${encodeFilePath(file.path)}`}
                 className="text-link hover:underline truncate block"
               >
                 {file.name}

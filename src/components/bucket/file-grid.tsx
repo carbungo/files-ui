@@ -116,7 +116,7 @@ export function FileGrid({ bucketId, files, folders = [], currentPath = "" }: Fi
         const isCode = isCodeOrText(file.mime_type, file.name);
 
         return (
-          <Link key={file.path} href={`/buckets/${bucketId}/files/${file.path}`}>
+          <Link key={file.path} href={`/buckets/${bucketId}/files/${encodeFilePath(file.path)}`}>
             <div className="group flex h-40 flex-col overflow-hidden rounded-lg border border-border bg-surface hover:border-accent transition-colors">
               <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-t-[inherit] bg-surface-2">
                 {isImage ? (
