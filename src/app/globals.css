@@ -48,6 +48,29 @@ body {
   }
 }
 
+/* Themed scrollbars for code blocks */
+pre {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
 .light {
   --color-bg: #ffffff;
   --color-surface: #f6f8fa;
