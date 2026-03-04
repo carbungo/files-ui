@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useBucketEvents } from "@/hooks/use-bucket-events";
@@ -79,7 +79,26 @@ function Breadcrumbs({ bucketId, currentPath }: { bucketId: string; currentPath:
   );
 }
 
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 200;
+
+async function fetchAllFiles(bucketId: string, startOffset: number): Promise<FileEntry[]> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const allItems: FileEntry[] = [];
+  let offset = startOffset;
+
+  while (true) {
+    const res = await fetch(
+      `${apiUrl}/api/buckets/${bucketId}/files?limit=${PAGE_SIZE}&offset=${offset}&sort=path&order=asc`,
+    );
+    if (!res.ok) break;
+    const data = (await res.json()) as { items: FileEntry[]; total: number };
+    allItems.push(...data.items);
+    offset += data.items.length;
+    if (offset >= data.total || data.items.length === 0) break;
+  }
+
+  return allItems;
+}
 
 export function LiveFileList({
   bucketId,
@@ -91,30 +110,22 @@ export function LiveFileList({
 }: LiveFileListProps) {
   const files = useBucketEvents(bucketId, initialFiles);
   const [extraFiles, setExtraFiles] = useState<FileEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [exhausted, setExhausted] = useState(!hasMoreFiles);
+  const [loading, setLoading] = useState(hasMoreFiles);
+  const fetchedRef = useRef(false);
+
+  // Auto-load remaining files on mount
+  useEffect(() => {
+    if (!hasMoreFiles || fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    fetchAllFiles(bucketId, initialFiles.length).then((items) => {
+      setExtraFiles(items);
+      setLoading(false);
+    });
+  }, [bucketId, hasMoreFiles, initialFiles.length]);
 
   const allFiles = [...files, ...extraFiles];
   const { folders, directFiles } = groupFilesAtPath(allFiles, currentPath);
-
-  const loadMore = useCallback(async () => {
-    setLoading(true);
-    try {
-      const offset = allFiles.length;
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const res = await fetch(
-        `${apiUrl}/api/buckets/${bucketId}/files?limit=${PAGE_SIZE}&offset=${offset}&sort=path&order=asc`,
-      );
-      if (!res.ok) return;
-      const data = (await res.json()) as { items: FileEntry[]; total: number };
-      setExtraFiles((prev) => [...prev, ...data.items]);
-      if (offset + data.items.length >= data.total) {
-        setExhausted(true);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [allFiles.length, bucketId]);
 
   return (
     <div>
@@ -134,22 +145,12 @@ export function LiveFileList({
           currentPath={currentPath}
         />
       )}
-      {!exhausted && (
+      {loading && (
         <div className="mt-4 flex justify-center">
-          <button
-            onClick={loadMore}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-surface-2 transition-colors disabled:opacity-50"
-          >
-            {loading ? (
-              <>
-                <Loader2 size={14} className="animate-spin" />
-                Loading...
-              </>
-            ) : (
-              `Load more (${allFiles.length} of ${fileCount})`
-            )}
-          </button>
+          <span className="inline-flex items-center gap-2 text-sm text-text-muted">
+            <Loader2 size={14} className="animate-spin" />
+            Loading files ({allFiles.length} of {fileCount})...
+          </span>
         </div>
       )}
     </div>
