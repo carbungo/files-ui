@@ -11,19 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npx prettier --check .
-      - run: npx tsc --noEmit
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run prettier --check .
+      - run: bun run tsc --noEmit
       - uses: actions/cache@v4
         with:
           path: .next/cache
-          key: nextjs-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**') }}
-          restore-keys: nextjs-${{ hashFiles('package-lock.json') }}-
-      - run: npm run build
+          key: nextjs-${{ hashFiles('bun.lock') }}-${{ hashFiles('src/**') }}
+          restore-keys: nextjs-${{ hashFiles('bun.lock') }}-
+      - run: bun run build
 
   docker:
     needs: build
