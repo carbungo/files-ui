@@ -26,6 +26,18 @@ export default async function BucketDetailPage({ params }: BucketDetailPageProps
     notFound();
   }
 
+  let files: import("@carbonfiles/client").BucketFile[] = [];
+  try {
+    const listing = await client.buckets[id]!.files.list({
+      limit: 200,
+      sort: "name",
+      order: "asc",
+    });
+    files = listing.items;
+  } catch {
+    // keep empty
+  }
+
   const isExpired = bucket.expires_at && new Date(bucket.expires_at).getTime() < Date.now();
 
   return (
@@ -70,15 +82,10 @@ export default async function BucketDetailPage({ params }: BucketDetailPageProps
 
       <div>
         <h2 className="mb-3 text-lg font-semibold">Files ({bucket.file_count})</h2>
-        {bucket.files.length === 0 ? (
+        {files.length === 0 ? (
           <p className="text-text-muted">No files in this bucket.</p>
         ) : (
-          <FileList bucketId={bucket.id} files={bucket.files} />
-        )}
-        {bucket.has_more_files && (
-          <p className="mt-2 text-sm text-text-muted">
-            Showing first {bucket.files.length} files. View the bucket directly for the full list.
-          </p>
+          <FileList bucketId={bucket.id} files={files} />
         )}
       </div>
     </div>
