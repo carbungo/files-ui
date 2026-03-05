@@ -6,8 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Plus } from "lucide-react";
+import { createApiClient, CarbonFilesError } from "@/lib/api/client";
 
-export function CreateKeyForm() {
+interface CreateKeyFormProps {
+  token?: string;
+}
+
+export function CreateKeyForm({ token }: CreateKeyFormProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,21 +27,16 @@ export function CreateKeyForm() {
     setError(null);
 
     try {
-      const res = await fetch("/dashboard/keys/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Failed to create key");
-        return;
-      }
-      setCreatedKey(data.key);
+      const result = await createApiClient(token).keys.create({ name: name.trim() });
+      setCreatedKey(result.key);
       setName("");
       router.refresh();
-    } catch {
-      setError("Network error");
+    } catch (e) {
+      if (e instanceof CarbonFilesError) {
+        setError(e.error);
+      } else {
+        setError("Network error");
+      }
     } finally {
       setLoading(false);
     }

@@ -6,14 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Save } from "lucide-react";
+import { createApiClient, CarbonFilesError } from "@/lib/api/client";
 
 interface EditBucketFormProps {
+  token?: string;
   bucketId: string;
   initialName: string;
   initialDescription: string;
 }
 
-export function EditBucketForm({ bucketId, initialName, initialDescription }: EditBucketFormProps) {
+export function EditBucketForm({ token, bucketId, initialName, initialDescription }: EditBucketFormProps) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
@@ -29,25 +31,19 @@ export function EditBucketForm({ bucketId, initialName, initialDescription }: Ed
     setSuccess(false);
 
     try {
-      const body: Record<string, string | null> = {};
-      if (name.trim() !== initialName) body.name = name.trim();
-      if (description.trim() !== initialDescription) body.description = description.trim() || null;
-      if (expiresIn.trim()) body.expires_in = expiresIn.trim();
-
-      const res = await fetch(`/dashboard/buckets/${bucketId}/edit`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      await createApiClient(token).buckets[bucketId]!.update({
+        name: name.trim() !== initialName ? name.trim() : undefined,
+        description: description.trim() !== initialDescription ? (description.trim() || undefined) : undefined,
+        expires_in: expiresIn.trim() || undefined,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Failed to update bucket");
-        return;
-      }
       setSuccess(true);
       router.refresh();
-    } catch {
-      setError("Network error");
+    } catch (e) {
+      if (e instanceof CarbonFilesError) {
+        setError(e.error);
+      } else {
+        setError("Network error");
+      }
     } finally {
       setLoading(false);
     }

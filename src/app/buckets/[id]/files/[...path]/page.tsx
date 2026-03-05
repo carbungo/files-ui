@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, ExternalLink } from "lucide-react";
+import { CarbonFilesClient, type BucketFile } from "@carbonfiles/client";
 import { FileIcon } from "@/components/file/file-icon";
 import { CodeBlock } from "@/components/file/code-block";
 import { MarkdownRenderer } from "@/components/file/markdown-renderer";
@@ -10,15 +11,8 @@ import { VidstackPlayer } from "@/components/file/media-player";
 import { Badge } from "@/components/ui/badge";
 import { encodeFilePath, formatBytes, isTextType } from "@/lib/utils";
 
-interface FileMetadata {
-  path: string;
-  name: string;
-  size: number;
-  mime_type: string;
-  short_code: string | null;
-  short_url: string | null;
-  created_at: string;
-  updated_at: string;
+function getClient() {
+  return new CarbonFilesClient({ baseUrl: process.env.API_URL! });
 }
 
 const CODE_EXTENSIONS =
@@ -39,17 +33,9 @@ function decodePath(segments: string[]): string {
     .join("/");
 }
 
-async function fetchFileMetadata(bucketId: string, filePath: string): Promise<FileMetadata | null> {
+async function fetchFileMetadata(bucketId: string, filePath: string): Promise<BucketFile | null> {
   try {
-    const res = await fetch(
-      `${process.env.API_URL}/api/buckets/${bucketId}/files/${encodeFilePath(filePath)}`,
-      {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-      },
-    );
-    if (!res.ok) return null;
-    return (await res.json()) as FileMetadata;
+    return await getClient().buckets[bucketId]!.files[filePath]!.getMetadata();
   } catch {
     return null;
   }
@@ -57,11 +43,7 @@ async function fetchFileMetadata(bucketId: string, filePath: string): Promise<Fi
 
 async function fetchFileContent(bucketId: string, filePath: string): Promise<string | null> {
   try {
-    const res = await fetch(
-      `${process.env.API_URL}/api/buckets/${bucketId}/files/${encodeFilePath(filePath)}/content`,
-      { cache: "no-store" },
-    );
-    if (!res.ok) return null;
+    const res = await getClient().buckets[bucketId]!.files[filePath]!.download();
     return await res.text();
   } catch {
     return null;
@@ -163,7 +145,7 @@ async function FilePreview({
 }: {
   bucketId: string;
   filePath: string;
-  metadata: FileMetadata;
+  metadata: BucketFile;
 }) {
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
   const contentUrl = `${apiBase}/api/buckets/${bucketId}/files/${encodeFilePath(filePath)}/content`;

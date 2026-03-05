@@ -5,21 +5,11 @@ import { ChevronRight } from "lucide-react";
 import { useBucketEvents } from "@/hooks/use-bucket-events";
 import { FileList } from "./file-list";
 import { FileGrid } from "./file-grid";
-
-interface FileEntry {
-  path: string;
-  name: string;
-  size: number;
-  mime_type: string;
-  short_code?: string | null;
-  short_url?: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import type { BucketFile } from "@carbonfiles/client";
 
 interface LiveFileListProps {
   bucketId: string;
-  files: FileEntry[];
+  files: BucketFile[];
   folders: string[];
   viewMode: "list" | "grid";
   currentPath: string;

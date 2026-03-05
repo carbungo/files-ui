@@ -4,13 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { createApiClient } from "@/lib/api/client";
 
 interface DeleteKeyButtonProps {
+  token?: string;
   prefix: string;
   keyName: string;
 }
 
-export function DeleteKeyButton({ prefix, keyName }: DeleteKeyButtonProps) {
+export function DeleteKeyButton({ token, prefix, keyName }: DeleteKeyButtonProps) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,12 +20,8 @@ export function DeleteKeyButton({ prefix, keyName }: DeleteKeyButtonProps) {
   async function handleDelete() {
     setLoading(true);
     try {
-      const res = await fetch(`/dashboard/keys/${prefix}/delete`, {
-        method: "DELETE",
-      });
-      if (res.ok || res.status === 204) {
-        router.refresh();
-      }
+      await createApiClient(token).keys[prefix]!.revoke();
+      router.refresh();
     } catch {
       // ignore
     } finally {

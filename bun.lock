@@ -5,6 +5,7 @@
     "": {
       "name": "clawd-files-v5",
       "dependencies": {
+        "@carbonfiles/client": "^0.4.0",
         "@microsoft/signalr": "^10.0.0",
         "@shikijs/rehype": "^4.0.1",
         "@vidstack/react": "^1.12",
@@ -64,6 +65,8 @@
     "@babel/traverse": ["@babel/traverse@7.29.0", "", { "dependencies": { "@babel/code-frame": "^7.29.0", "@babel/generator": "^7.29.0", "@babel/helper-globals": "^7.28.0", "@babel/parser": "^7.29.0", "@babel/template": "^7.28.6", "@babel/types": "^7.29.0", "debug": "^4.3.1" } }, "sha512-4HPiQr0X7+waHfyXPZpWPfWL/J7dcN1mx9gL6WdQVMbPnF3+ZhSMs8tCxN7oHddJE9fhNE7+lxdnlyemKfJRuA=="],
 
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
+
+    "@carbonfiles/client": ["@carbonfiles/client@0.4.0", "", {}, "sha512-amhSAFcNGmVV573aAe70PEGDVkJkQzuYW8FSyWjGpCHA/OCD/UkVRtv6SeAWSWDTaA8JLX27dV3se9cJh/sluQ=="],
 
     "@emnapi/core": ["@emnapi/core@1.8.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.1.0", "tslib": "^2.4.0" } }, "sha512-AvT9QFpxK0Zd8J0jopedNm+w/2fIzvtPKPjqyw9jwvBaReTTqPBk9Hixaz7KbjimP+QNz605/XnjFcDAL2pqBg=="],
 

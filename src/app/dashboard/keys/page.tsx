@@ -1,4 +1,5 @@
 import { getAuthToken } from "@/lib/auth/cookies";
+import { getServerClient } from "@/lib/api/server";
 import { CreateKeyForm } from "@/components/dashboard/create-key-form";
 import { DeleteKeyButton } from "@/components/dashboard/delete-key-button";
 import { formatBytes } from "@/lib/utils";
@@ -10,21 +11,22 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import type { PaginatedResponseOfApiKeyListItem } from "@/lib/api/client";
 
 export default async function KeysPage() {
   const token = await getAuthToken();
-  const res = await fetch(`${process.env.API_URL}/api/keys?limit=100&offset=0`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
+  const client = await getServerClient();
 
-  const keys: PaginatedResponseOfApiKeyListItem | null = res.ok ? await res.json() : null;
+  let keys;
+  try {
+    keys = await client.keys.list({ limit: 100, offset: 0 });
+  } catch {
+    keys = null;
+  }
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">API Keys</h1>
-      <CreateKeyForm />
+      <CreateKeyForm token={token} />
       {!keys ? (
         <p className="text-text-muted">Failed to load API keys.</p>
       ) : keys.items.length === 0 ? (
@@ -59,16 +61,16 @@ export default async function KeysPage() {
                   {key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : "Never"}
                 </TableCell>
                 <TableCell className="hidden text-text-muted lg:table-cell">
-                  {Number(key.bucket_count ?? 0)}
+                  {key.bucket_count}
                 </TableCell>
                 <TableCell className="hidden text-text-muted lg:table-cell">
-                  {Number(key.file_count ?? 0)}
+                  {key.file_count}
                 </TableCell>
                 <TableCell className="hidden text-text-muted lg:table-cell">
-                  {formatBytes(Number(key.total_size ?? 0))}
+                  {formatBytes(key.total_size)}
                 </TableCell>
                 <TableCell>
-                  <DeleteKeyButton prefix={key.prefix} keyName={key.name} />
+                  <DeleteKeyButton prefix={key.prefix} keyName={key.name} token={token} />
                 </TableCell>
               </TableRow>
             ))}

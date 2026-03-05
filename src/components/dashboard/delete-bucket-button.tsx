@@ -4,13 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { createApiClient } from "@/lib/api/client";
 
 interface DeleteBucketButtonProps {
+  token?: string;
   bucketId: string;
   bucketName: string;
 }
 
-export function DeleteBucketButton({ bucketId, bucketName }: DeleteBucketButtonProps) {
+export function DeleteBucketButton({ token, bucketId, bucketName }: DeleteBucketButtonProps) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,12 +20,8 @@ export function DeleteBucketButton({ bucketId, bucketName }: DeleteBucketButtonP
   async function handleDelete() {
     setLoading(true);
     try {
-      const res = await fetch(`/dashboard/buckets/${bucketId}/delete`, {
-        method: "DELETE",
-      });
-      if (res.ok || res.status === 204) {
-        router.push("/dashboard/buckets");
-      }
+      await createApiClient(token).buckets[bucketId]!.delete();
+      router.push("/dashboard/buckets");
     } catch {
       // ignore
     } finally {

@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { Upload, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBytes } from "@/lib/utils";
+import { createApiClient, CarbonFilesError } from "@/lib/api/client";
 
 type FileStatus = "idle" | "uploading" | "success" | "error";
 
@@ -19,43 +20,17 @@ interface TrackedFile {
 interface UploadZoneProps {
   bucketId: string;
   uploadToken?: string;
-  proxyUrl?: string;
+  token?: string;
 }
 
-const STREAMING_THRESHOLD = 100 * 1024 * 1024; // 100MB
-
-export function UploadZone({ bucketId, uploadToken, proxyUrl }: UploadZoneProps) {
+export function UploadZone({ bucketId, uploadToken, token }: UploadZoneProps) {
   const [files, setFiles] = useState<TrackedFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const getUploadUrl = useCallback(
-    (file: File) => {
-      if (file.size > STREAMING_THRESHOLD) {
-        const encodedName = encodeURIComponent(file.name);
-        if (proxyUrl) {
-          return `${proxyUrl}/stream?filename=${encodedName}`;
-        }
-        const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
-        const base = `${apiBase}/api/buckets/${bucketId}/upload/stream?filename=${encodedName}`;
-        return uploadToken ? `${base}&token=${uploadToken}` : base;
-      }
-      if (proxyUrl) {
-        return proxyUrl;
-      }
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
-      const base = `${apiBase}/api/buckets/${bucketId}/upload`;
-      return uploadToken ? `${base}?token=${uploadToken}` : base;
-    },
-    [bucketId, uploadToken, proxyUrl],
-  );
-
   const uploadFile = useCallback(
     (tracked: TrackedFile) => {
       const controller = new AbortController();
-      const xhr = new XMLHttpRequest();
-      const url = getUploadUrl(tracked.file);
-      const isStreaming = tracked.file.size > STREAMING_THRESHOLD;
 
       setFiles((prev) =>
         prev.map((f) =>
@@ -65,68 +40,46 @@ export function UploadZone({ bucketId, uploadToken, proxyUrl }: UploadZoneProps)
         ),
       );
 
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100);
-          setFiles((prev) => prev.map((f) => (f.id === tracked.id ? { ...f, progress } : f)));
-        }
-      });
-
-      xhr.addEventListener("load", () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
+      const client = createApiClient(token);
+      client.buckets[bucketId]!.files
+        .upload(tracked.file, tracked.file.name, {
+          onProgress: (p) => {
+            const progress = p.percentage != null ? Math.round(p.percentage) : 0;
+            setFiles((prev) => prev.map((f) => (f.id === tracked.id ? { ...f, progress } : f)));
+          },
+          uploadToken,
+          signal: controller.signal,
+        })
+        .then(() => {
           setFiles((prev) =>
             prev.map((f) =>
               f.id === tracked.id ? { ...f, status: "success" as const, progress: 100 } : f,
             ),
           );
-        } else {
-          let errorMsg = `Upload failed (${xhr.status})`;
-          try {
-            const body = JSON.parse(xhr.responseText);
-            if (body.error) errorMsg = body.error;
-          } catch {
-            // keep default error
+        })
+        .catch((err) => {
+          if (controller.signal.aborted) {
+            setFiles((prev) =>
+              prev.map((f) =>
+                f.id === tracked.id ? { ...f, status: "error" as const, error: "Cancelled" } : f,
+              ),
+            );
+            return;
           }
+          const errorMsg =
+            err instanceof CarbonFilesError
+              ? err.message
+              : err instanceof Error
+                ? err.message
+                : "Upload failed";
           setFiles((prev) =>
             prev.map((f) =>
               f.id === tracked.id ? { ...f, status: "error" as const, error: errorMsg } : f,
             ),
           );
-        }
-      });
-
-      xhr.addEventListener("error", () => {
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === tracked.id ? { ...f, status: "error" as const, error: "Network error" } : f,
-          ),
-        );
-      });
-
-      xhr.addEventListener("abort", () => {
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === tracked.id ? { ...f, status: "error" as const, error: "Cancelled" } : f,
-          ),
-        );
-      });
-
-      controller.signal.addEventListener("abort", () => {
-        xhr.abort();
-      });
-
-      if (isStreaming) {
-        xhr.open("PUT", url);
-        xhr.setRequestHeader("Content-Type", tracked.file.type || "application/octet-stream");
-        xhr.send(tracked.file);
-      } else {
-        xhr.open("POST", url);
-        const formData = new FormData();
-        formData.append("file", tracked.file);
-        xhr.send(formData);
-      }
+        });
     },
-    [getUploadUrl],
+    [bucketId, uploadToken, token],
   );
 
   const addFiles = useCallback(

@@ -1,15 +1,10 @@
-import { cookies } from "next/headers";
-import { createClient } from "./generated/client/client.gen";
+import { CarbonFilesClient } from "@carbonfiles/client";
+import { getAuthToken } from "@/lib/auth/cookies";
 
 export async function getServerClient() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("cf-auth-token")?.value;
-  const serverClient = createClient({ baseUrl: process.env.API_URL! });
-  if (token) {
-    serverClient.interceptors.request.use((req) => {
-      req.headers.set("Authorization", `Bearer ${token}`);
-      return req;
-    });
-  }
-  return serverClient;
+  const token = await getAuthToken();
+  return new CarbonFilesClient({
+    baseUrl: process.env.API_URL!,
+    apiKey: token,
+  });
 }

@@ -9,10 +9,10 @@
     "dev": "bun node_modules/next/dist/bin/next dev",
     "build": "bun node_modules/next/dist/bin/next build",
     "start": "bun node_modules/next/dist/bin/next start",
-    "lint": "eslint",
-    "generate-api": "openapi-ts"
+    "lint": "eslint"
   },
   "dependencies": {
+    "@carbonfiles/client": "^0.4.0",
     "@microsoft/signalr": "^10.0.0",
     "@shikijs/rehype": "^4.0.1",
     "@vidstack/react": "^1.12",
@@ -25,7 +25,6 @@
     "shiki": "^4.0.1"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.93.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

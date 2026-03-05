@@ -3,17 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createFileHub } from "@/lib/signalr/client";
-
-interface BucketFile {
-  path: string;
-  name: string;
-  size: number;
-  mime_type: string;
-  short_code?: string | null;
-  short_url?: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import type { BucketFile } from "@carbonfiles/client";
 
 export function useBucketEvents(bucketId: string, initialFiles: BucketFile[]) {
   const [files, setFiles] = useState<BucketFile[]>(initialFiles);

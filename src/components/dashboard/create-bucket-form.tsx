@@ -6,8 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Plus } from "lucide-react";
+import { createApiClient, CarbonFilesError } from "@/lib/api/client";
 
-export function CreateBucketForm() {
+interface CreateBucketFormProps {
+  token?: string;
+}
+
+export function CreateBucketForm({ token }: CreateBucketFormProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -23,26 +28,21 @@ export function CreateBucketForm() {
     setError(null);
 
     try {
-      const body: Record<string, string | null> = { name: name.trim() };
-      if (description.trim()) body.description = description.trim();
-      if (expiresIn.trim()) body.expires_in = expiresIn.trim();
-
-      const res = await fetch("/dashboard/buckets/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      await createApiClient(token).buckets.create({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        expires_in: expiresIn.trim() || undefined,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Failed to create bucket");
-        return;
-      }
       setName("");
       setDescription("");
       setExpiresIn("");
       router.refresh();
-    } catch {
-      setError("Network error");
+    } catch (e) {
+      if (e instanceof CarbonFilesError) {
+        setError(e.error);
+      } else {
+        setError("Network error");
+      }
     } finally {
       setLoading(false);
     }

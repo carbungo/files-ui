@@ -2,13 +2,13 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getAuthToken } from "@/lib/auth/cookies";
+import { getServerClient } from "@/lib/api/server";
 import { EditBucketForm } from "@/components/dashboard/edit-bucket-form";
 import { DeleteBucketButton } from "@/components/dashboard/delete-bucket-button";
 import { FileList } from "@/components/bucket/file-list";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatBytes, formatExpiry } from "@/lib/utils";
-import type { BucketDetailResponse } from "@/lib/api/client";
 
 interface BucketDetailPageProps {
   params: Promise<{ id: string }>;
@@ -17,25 +17,16 @@ interface BucketDetailPageProps {
 export default async function BucketDetailPage({ params }: BucketDetailPageProps) {
   const { id } = await params;
   const token = await getAuthToken();
+  const client = await getServerClient();
 
-  const res = await fetch(`${process.env.API_URL}/api/buckets/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
-
-  if (!res.ok) {
+  let bucket;
+  try {
+    bucket = await client.buckets[id]!.get();
+  } catch {
     notFound();
   }
 
-  const bucket: BucketDetailResponse = await res.json();
   const isExpired = bucket.expires_at && new Date(bucket.expires_at).getTime() < Date.now();
-
-  const files = bucket.files.map((f) => ({
-    ...f,
-    size: Number(f.size ?? 0),
-    created_at: f.created_at ?? "",
-    updated_at: f.updated_at ?? "",
-  }));
 
   return (
     <div>
@@ -54,8 +45,8 @@ export default async function BucketDetailPage({ params }: BucketDetailPageProps
             {bucket.description && <p className="mt-1 text-text-muted">{bucket.description}</p>}
             <div className="mt-3 flex flex-wrap gap-3 text-sm text-text-muted">
               <span>Owner: {bucket.owner}</span>
-              <span>Files: {Number(bucket.file_count ?? 0)}</span>
-              <span>Size: {formatBytes(Number(bucket.total_size ?? 0))}</span>
+              <span>Files: {bucket.file_count}</span>
+              <span>Size: {formatBytes(bucket.total_size)}</span>
               {bucket.created_at && (
                 <span>Created: {new Date(bucket.created_at).toLocaleDateString()}</span>
               )}
@@ -66,7 +57,7 @@ export default async function BucketDetailPage({ params }: BucketDetailPageProps
               )}
             </div>
           </div>
-          <DeleteBucketButton bucketId={bucket.id} bucketName={bucket.name} />
+          <DeleteBucketButton bucketId={bucket.id} bucketName={bucket.name} token={token} />
         </div>
       </Card>
 
@@ -74,18 +65,19 @@ export default async function BucketDetailPage({ params }: BucketDetailPageProps
         bucketId={bucket.id}
         initialName={bucket.name}
         initialDescription={bucket.description ?? ""}
+        token={token}
       />
 
       <div>
-        <h2 className="mb-3 text-lg font-semibold">Files ({Number(bucket.file_count ?? 0)})</h2>
-        {files.length === 0 ? (
+        <h2 className="mb-3 text-lg font-semibold">Files ({bucket.file_count})</h2>
+        {bucket.files.length === 0 ? (
           <p className="text-text-muted">No files in this bucket.</p>
         ) : (
-          <FileList bucketId={bucket.id} files={files} />
+          <FileList bucketId={bucket.id} files={bucket.files} />
         )}
         {bucket.has_more_files && (
           <p className="mt-2 text-sm text-text-muted">
-            Showing first {files.length} files. View the bucket directly for the full list.
+            Showing first {bucket.files.length} files. View the bucket directly for the full list.
           </p>
         )}
       </div>

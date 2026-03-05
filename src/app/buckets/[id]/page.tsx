@@ -1,64 +1,42 @@
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
+import {
+  CarbonFilesClient,
+  type BucketDetailResponse,
+  type DirectoryListingResponse,
+} from "@carbonfiles/client";
 import { BucketHeader } from "@/components/bucket/bucket-header";
 import { ViewModeToggle } from "@/components/bucket/view-mode-toggle";
 import { LiveFileList } from "@/components/bucket/live-file-list";
 import { ReadmeSection } from "@/components/bucket/readme-section";
 import { formatBytes } from "@/lib/utils";
 
-interface BucketFile {
-  path: string;
-  name: string;
-  size: number;
-  mime_type: string;
-  short_code: string | null;
-  short_url: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface BucketDetailResponse {
-  id: string;
-  name: string;
-  owner: string;
-  description: string | null;
-  created_at: string;
-  expires_at: string | null;
-  last_used_at: string | null;
-  file_count: number;
-  total_size: number;
-  files: BucketFile[];
-  has_more_files: boolean;
-}
-
-interface DirectoryListingResponse {
-  files: BucketFile[];
-  folders: string[];
-  total_files: number;
-  total_folders: number;
-  limit: number;
-  offset: number;
+function getClient() {
+  return new CarbonFilesClient({ baseUrl: process.env.API_URL! });
 }
 
 async function fetchBucket(id: string): Promise<BucketDetailResponse | null> {
-  const res = await fetch(`${process.env.API_URL}/api/buckets/${id}`, {
-    next: { revalidate: 30 },
-  });
-  if (!res.ok) return null;
-  return res.json() as Promise<BucketDetailResponse>;
+  try {
+    return await getClient().buckets[id]!.get();
+  } catch {
+    return null;
+  }
 }
 
 async function fetchDirectoryListing(
   id: string,
   path: string,
 ): Promise<DirectoryListingResponse | null> {
-  const params = new URLSearchParams({ path, limit: "200", sort: "name", order: "asc" });
-  const res = await fetch(`${process.env.API_URL}/api/buckets/${id}/ls?${params}`, {
-    next: { revalidate: 30 },
-  });
-  if (!res.ok) return null;
-  return res.json() as Promise<DirectoryListingResponse>;
+  try {
+    return await getClient().buckets[id]!.files.listDirectory(path, {
+      limit: 200,
+      sort: "name",
+      order: "asc",
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function generateMetadata({

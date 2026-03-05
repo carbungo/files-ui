@@ -1,5 +1,5 @@
 import { FolderOpen, FileText, HardDrive, Key, Download } from "lucide-react";
-import { getAuthToken } from "@/lib/auth/cookies";
+import { getServerClient } from "@/lib/api/server";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { Card } from "@/components/ui/card";
 import { formatBytes } from "@/lib/utils";
@@ -11,16 +11,14 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import type { StatsResponse } from "@/lib/api/client";
 
 export default async function StatsPage() {
-  const token = await getAuthToken();
-  const res = await fetch(`${process.env.API_URL}/api/stats`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
+  const client = await getServerClient();
 
-  if (!res.ok) {
+  let stats;
+  try {
+    stats = await client.stats.get();
+  } catch {
     return (
       <div>
         <h1 className="mb-6 text-2xl font-bold">Stats</h1>
@@ -28,8 +26,6 @@ export default async function StatsPage() {
       </div>
     );
   }
-
-  const stats: StatsResponse = await res.json();
 
   return (
     <div>
@@ -39,19 +35,19 @@ export default async function StatsPage() {
         <StatsCard
           icon={FolderOpen}
           label="Total Buckets"
-          value={Number(stats.total_buckets ?? 0)}
+          value={stats.total_buckets}
         />
-        <StatsCard icon={FileText} label="Total Files" value={Number(stats.total_files ?? 0)} />
+        <StatsCard icon={FileText} label="Total Files" value={stats.total_files} />
         <StatsCard
           icon={HardDrive}
           label="Total Storage"
-          value={formatBytes(Number(stats.total_size ?? 0))}
+          value={formatBytes(stats.total_size)}
         />
-        <StatsCard icon={Key} label="Total API Keys" value={Number(stats.total_keys ?? 0)} />
+        <StatsCard icon={Key} label="Total API Keys" value={stats.total_keys} />
         <StatsCard
           icon={Download}
           label="Total Downloads"
-          value={Number(stats.total_downloads ?? 0)}
+          value={stats.total_downloads}
         />
       </div>
 
@@ -74,11 +70,11 @@ export default async function StatsPage() {
                 <TableRow key={owner.owner}>
                   <TableCell className="font-medium">{owner.owner}</TableCell>
                   <TableCell className="text-text-muted">
-                    {Number(owner.bucket_count ?? 0)}
+                    {owner.bucket_count}
                   </TableCell>
-                  <TableCell className="text-text-muted">{Number(owner.file_count ?? 0)}</TableCell>
+                  <TableCell className="text-text-muted">{owner.file_count}</TableCell>
                   <TableCell className="text-text-muted">
-                    {formatBytes(Number(owner.total_size ?? 0))}
+                    {formatBytes(owner.total_size)}
                   </TableCell>
                 </TableRow>
               ))}

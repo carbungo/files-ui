@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAuthToken } from "@/lib/auth/cookies";
+import { getServerClient } from "@/lib/api/server";
 import { CreateBucketForm } from "@/components/dashboard/create-bucket-form";
 import { Pagination } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +13,6 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import type { PaginatedResponseOfBucket } from "@/lib/api/client";
 
 interface BucketsPageProps {
   searchParams: Promise<{ offset?: string; limit?: string }>;
@@ -23,21 +23,19 @@ export default async function BucketsPage({ searchParams }: BucketsPageProps) {
   const offset = Number(offsetStr) || 0;
   const limit = Number(limitStr) || 20;
   const token = await getAuthToken();
+  const client = await getServerClient();
 
-  const res = await fetch(
-    `${process.env.API_URL}/api/buckets?limit=${limit}&offset=${offset}&sort=created_at&order=desc`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    },
-  );
-
-  const buckets: PaginatedResponseOfBucket | null = res.ok ? await res.json() : null;
+  let buckets;
+  try {
+    buckets = await client.buckets.list({ limit, offset, sort: "created_at", order: "desc" });
+  } catch {
+    buckets = null;
+  }
 
   return (
     <div>
       <h1 className="mb-6 text-2xl font-bold">Buckets</h1>
-      <CreateBucketForm />
+      <CreateBucketForm token={token} />
       {!buckets ? (
         <p className="text-text-muted">Failed to load buckets.</p>
       ) : buckets.items.length === 0 ? (
@@ -72,10 +70,10 @@ export default async function BucketsPage({ searchParams }: BucketsPageProps) {
                       {bucket.owner}
                     </TableCell>
                     <TableCell className="text-text-muted">
-                      {Number(bucket.file_count ?? 0)}
+                      {bucket.file_count}
                     </TableCell>
                     <TableCell className="text-text-muted">
-                      {formatBytes(Number(bucket.total_size ?? 0))}
+                      {formatBytes(bucket.total_size)}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       {bucket.expires_at ? (
@@ -92,7 +90,7 @@ export default async function BucketsPage({ searchParams }: BucketsPageProps) {
             </TableBody>
           </Table>
           <Pagination
-            total={Number(buckets.total ?? 0)}
+            total={buckets.total}
             limit={limit}
             offset={offset}
             baseHref="/dashboard/buckets"
