@@ -1,6 +1,8 @@
-# clawd-files
+# CarbonFiles Dashboard
 
-A Next.js frontend for the [CarbonFiles](https://github.com/carbon/carbon-files) API. Provides a web interface for managing file buckets, uploading and sharing files, and administering API keys.
+The official web UI for [CarbonFiles](https://github.com/carbungo/carbon-files) — a file-sharing platform with bucket-based organization, API key authentication, and real-time events. Provides a web interface for managing file buckets, uploading and sharing files, and administering API keys.
+
+> For the complete API reference, deployment guide, and LLM-consumable docs, see the [main CarbonFiles repo](https://github.com/carbungo/carbon-files).
 
 ## Features
 

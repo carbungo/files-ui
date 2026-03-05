@@ -1,174 +1,71 @@
 import { NextResponse } from "next/server";
 
-const content = `# clawd-files
+const content = `# CarbonFiles Dashboard
 
-> File sharing platform powered by CarbonFiles. Organize files into buckets, share via short URLs, upload programmatically, and download individually or as ZIP archives.
+> Official web UI for CarbonFiles — the file-sharing platform with bucket-based organization.
+> For the complete API reference, see the carbon-files repo: https://github.com/carbungo/carbon-files/blob/main/llms.txt
 
-## Browsing Buckets
+## What This Is
 
-Every bucket has a unique ID. To view a bucket's files in a browser:
+The dashboard is a Next.js frontend for the CarbonFiles API. It provides a web interface for browsing buckets, previewing files (with syntax highlighting, video players, image previews), managing API keys, and uploading files.
 
-    GET /buckets/{bucketId}
+The API backend is the source of truth for all operations. This dashboard is a consumer of that API.
 
-To get bucket metadata and file listing from the API:
+## Routes
 
-    GET /api/buckets/{bucketId}
+| Route | Auth | Description |
+|-------|------|-------------|
+| \`/\` | Public | Landing page — enter a bucket ID or log in |
+| \`/?token={jwt}\` | — | Auto-login: validates token, sets cookie, redirects to /dashboard |
+| \`/dashboard\` | Dashboard token | Admin dashboard — bucket list, stats overview |
+| \`/dashboard/buckets/{id}\` | Dashboard token | Bucket detail — file list, management, upload |
+| \`/dashboard/keys\` | Dashboard token | API key management — create, list, revoke |
+| \`/dashboard/stats\` | Dashboard token | System statistics |
+| \`/buckets/{id}\` | Public | Public bucket view — browse files, download |
+| \`/buckets/{id}/files/{path}\` | Public | File detail — preview with syntax highlighting, video player, etc. |
+| \`/buckets/{id}/upload?token={token}\` | Upload token | Upload page — drag-and-drop file upload |
+| \`/auth/set-token\` | — | API route: validates JWT via API, sets \`cf-auth-token\` cookie |
+| \`/api/version\` | Public | Build info (commit, timestamp) |
 
-Response (JSON):
-    {
-      "id": "string",
-      "name": "string",
-      "owner": "string",
-      "description": "string | null",
-      "created_at": "ISO 8601",
-      "expires_at": "ISO 8601 | null",
-      "file_count": number,
-      "total_size": number,
-      "files": [{ "path", "name", "size", "mime_type", "short_code", "short_url", "created_at", "updated_at" }],
-      "has_more_files": boolean
-    }
+## Authentication Flow
 
-To get a plaintext summary suitable for LLM context windows:
+1. An admin creates a dashboard token: \`POST /api/tokens/dashboard\` on the CarbonFiles API
+2. User visits \`https://{dashboard}/?token={jwt}\`
+3. Dashboard calls \`/auth/set-token\` which validates the JWT against the API (\`GET /api/tokens/dashboard/me\`)
+4. On success, sets an HTTP-only cookie \`cf-auth-token={jwt}\`
+5. Redirects to \`/dashboard\`
+6. All subsequent requests use the cookie for auth — both browser-side API calls and server-side rendering
 
-    GET /api/buckets/{bucketId}/summary
+## URL Conventions
 
-## Downloading Files
+- **Dashboard URLs** (for humans): \`https://{dashboard}/buckets/{id}\`, \`https://{dashboard}/buckets/{id}/files/{path}\`
+  These render a nice UI with previews, syntax highlighting, video players, download buttons.
+- **API URLs** (for code): \`https://{api}/api/buckets/{id}/files/{path}/content\`
+  These return raw file bytes — for curl, scripts, SDKs.
+- **Short URLs** (for sharing): \`https://{api}/s/{code}\`
+  302 redirect to raw file content. Good for embedding, sharing in chat.
+- The dashboard and API may be on different subdomains (e.g., \`dash.example.com\` vs \`files.example.com\`).
+- When generating links for chat messages, docs, or anywhere a human will click: use dashboard URLs.
+- When generating links for curl, scripts, CI/CD: use API URLs or short URLs.
 
-### Single file
+## Environment Variables
 
-    curl -L https://{host}/buckets/{bucketId}/files/{filePath} -o filename
+| Variable | Description |
+|----------|-------------|
+| \`NEXT_PUBLIC_API_URL\` | Public API URL that browsers call (e.g., \`https://files.example.com\`) |
+| \`API_URL\` | Internal API URL for server-side rendering (e.g., \`http://api:8080\`) |
+| \`AUTH_COOKIE_SECRET\` | Secret for encrypting the auth cookie |
+| \`PORT\` | Dashboard port (default: 3000) |
 
-The middleware serves raw file content for non-browser requests (no Accept: text/html header). Browser requests get the HTML preview page.
+## Tech Stack
 
-### Via short URL
+Next.js 16 (App Router), React 19, Tailwind CSS 4, Bun runtime.
+API client auto-generated from OpenAPI spec via @hey-api/openapi-ts.
+Shiki for syntax highlighting, Lucide for icons.
 
-Some files have short URLs. If a file has a short_code, you can download it with:
+## Deployment
 
-    curl -L https://{host}/s/{shortCode} -o filename
-
-Short URLs redirect (302) to the backend which serves the file content directly.
-
-### Entire bucket as ZIP
-
-    curl https://{host}/buckets/{bucketId}/zip -o bucket.zip
-
-Streams all files in the bucket as a ZIP archive.
-
-## Uploading Files
-
-Uploads require an upload token scoped to a specific bucket.
-
-### Multipart upload (files under 100 MB)
-
-    curl -X POST https://{host}/api/buckets/{bucketId}/upload?token={uploadToken} \\
-      -F "path/to/file.txt=@localfile.txt"
-
-The form field name becomes the file path in the bucket. If the field name is generic (like "file" or "upload"), the original filename is used.
-
-Response (201 Created):
-    { "uploaded": [{ "path", "name", "size", "mime_type", "short_code", "short_url", "created_at", "updated_at" }] }
-
-### Streaming upload (large files)
-
-    curl -X PUT https://{host}/api/buckets/{bucketId}/upload/stream?token={uploadToken}&filename=largefile.bin \\
-      -H "Content-Type: application/octet-stream" \\
-      --data-binary @largefile.bin
-
-Use this for files over 100 MB. The filename query parameter is required.
-
-### Patching files (byte range writes)
-
-    curl -X PATCH https://{host}/api/buckets/{bucketId}/files/{filePath}?token={uploadToken} \\
-      -H "Content-Range: bytes 0-99/200" \\
-      --data-binary @chunk.bin
-
-To append to a file, use the X-Append header:
-
-    curl -X PATCH https://{host}/api/buckets/{bucketId}/files/{filePath}?token={uploadToken} \\
-      -H "X-Append: true" \\
-      --data-binary @chunk.bin
-
-## API Authentication
-
-There are three authentication methods:
-
-1. **API Key** (admin operations, bucket management):
-   Authorization: Bearer {apiKey}
-
-2. **Dashboard Token** (web dashboard access):
-   Authorization: Bearer {dashboardToken}
-   Or via cookie: cf-auth-token={dashboardToken}
-
-3. **Upload Token** (scoped file uploads):
-   Query parameter: ?token={uploadToken}
-
-## Bucket Management (requires API key)
-
-### Create a bucket
-
-    curl -X POST https://{host}/api/buckets \\
-      -H "Authorization: Bearer {apiKey}" \\
-      -H "Content-Type: application/json" \\
-      -d '{"name": "my-bucket", "description": "optional", "expires_in": "24h"}'
-
-### Update a bucket
-
-    curl -X PATCH https://{host}/api/buckets/{bucketId} \\
-      -H "Authorization: Bearer {apiKey}" \\
-      -H "Content-Type: application/json" \\
-      -d '{"name": "new-name", "description": "updated"}'
-
-### Delete a bucket
-
-    curl -X DELETE https://{host}/api/buckets/{bucketId} \\
-      -H "Authorization: Bearer {apiKey}"
-
-### List buckets
-
-    curl https://{host}/api/buckets?limit=20&offset=0&sort=created_at&order=desc \\
-      -H "Authorization: Bearer {apiKey}"
-
-## Upload Tokens
-
-Create a scoped upload token for a bucket (requires API key or dashboard token):
-
-    curl -X POST https://{host}/api/buckets/{bucketId}/tokens \\
-      -H "Authorization: Bearer {apiKey}" \\
-      -H "Content-Type: application/json" \\
-      -d '{"expires_in": "1h", "max_uploads": 10}'
-
-Response (201 Created):
-    { "token": "string", "bucket_id": "string", "expires_at": "ISO 8601", "max_uploads": number, "uploads_used": number }
-
-Share the token with the uploader. They can use it via the web UI at:
-
-    https://{host}/buckets/{bucketId}/upload?token={uploadToken}
-
-Or via the API endpoints documented above.
-
-## File Listing (paginated)
-
-    curl https://{host}/api/buckets/{bucketId}/files?limit=50&offset=0&sort=name&order=asc
-
-Response:
-    { "items": [BucketFile], "total": number, "limit": number, "offset": number }
-
-## Error Responses
-
-All errors return JSON:
-    { "error": "message", "hint": "optional suggestion" }
-
-Status codes: 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 413 Payload Too Large, 416 Range Not Satisfiable.
-
-## Typical Workflow
-
-1. Create a bucket with an API key
-2. Generate an upload token for that bucket
-3. Upload files using the token (multipart or streaming)
-4. Share the bucket URL: https://{host}/buckets/{bucketId}
-5. Recipients can browse, preview, and download files — no auth needed
-6. Files with short URLs can be shared as: https://{host}/s/{code}
-7. Download everything at once: https://{host}/buckets/{bucketId}/zip
+See the CarbonFiles deployment guide: https://github.com/carbungo/carbon-files/blob/main/docs/DEPLOYMENT.md
 `;
 
 export function GET() {
