@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, ExternalLink } from "lucide-react";
-import { CarbonFilesClient, type BucketFile } from "@carbonfiles/client";
+import type { BucketFile } from "@carbonfiles/client";
 import { FileIcon } from "@/components/file/file-icon";
 import { CodeBlock } from "@/components/file/code-block";
 import { MarkdownRenderer } from "@/components/file/markdown-renderer";
@@ -10,10 +10,6 @@ import { FileEventListener } from "@/components/file/file-event-listener";
 import { VidstackPlayer } from "@/components/file/media-player";
 import { Badge } from "@/components/ui/badge";
 import { encodeFilePath, formatBytes, isTextType } from "@/lib/utils";
-
-function getClient() {
-  return new CarbonFilesClient({ baseUrl: process.env.API_URL! });
-}
 
 const CODE_EXTENSIONS =
   /\.(rs|go|py|rb|java|kt|swift|c|cpp|h|hpp|cs|fs|hs|ml|ex|exs|clj|scala|zig|nim|ts|tsx|jsx|vue|svelte|astro|css|scss|less|sql|graphql|proto|tf|hcl|yaml|yml|toml|ini|conf|cfg|env|sh|bash|zsh|fish|ps1|bat|cmd|makefile|dockerfile)$/i;
@@ -35,7 +31,11 @@ function decodePath(segments: string[]): string {
 
 async function fetchFileMetadata(bucketId: string, filePath: string): Promise<BucketFile | null> {
   try {
-    return await getClient().buckets[bucketId]!.files[filePath]!.getMetadata();
+    const apiBase = process.env.API_URL!;
+    const url = `${apiBase}/api/buckets/${encodeURIComponent(bucketId)}/files/${encodeFilePath(filePath)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
     return null;
   }
@@ -43,7 +43,10 @@ async function fetchFileMetadata(bucketId: string, filePath: string): Promise<Bu
 
 async function fetchFileContent(bucketId: string, filePath: string): Promise<string | null> {
   try {
-    const res = await getClient().buckets[bucketId]!.files[filePath]!.download();
+    const apiBase = process.env.API_URL!;
+    const url = `${apiBase}/api/buckets/${encodeURIComponent(bucketId)}/files/${encodeFilePath(filePath)}/content`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
     return await res.text();
   } catch {
     return null;
